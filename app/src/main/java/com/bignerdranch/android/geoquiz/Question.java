@@ -2,6 +2,7 @@ package com.bignerdranch.android.geoquiz;
 
 /**
  * Created by MicGon7 on 2/13/18.
+ * Get test
  */
 
 public class Question {
