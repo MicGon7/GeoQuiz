@@ -9,19 +9,24 @@ import android.widget.ImageButton;
 import android.widget.TextView;
 import android.widget.Toast;
 
+import java.util.HashMap;
+import java.util.List;
+
 public class QuizActivity extends AppCompatActivity {
-    public static final String TAG = "QuizActivity";
+    private static final String TAG = "QuizActivity";
+    private static final String KEY_INDEX = "index";
 
     // Declare Widget variables
     private Button mTrueButton;
     private Button mFalseButton;
     private ImageButton mNextButton;
     private ImageButton mPreviouButton;
+    private HashMap<Integer, Boolean> questionMap = new HashMap<Integer, Boolean>();
 
     private TextView mQuestionTextView;
 
     // Declare and Initialize an array of question objects
-    private Question[] mQuestionBank = new Question[] {
+    private Question[] mQuestionBank = new Question[]{
             new Question(R.string.question_australia, true),
             new Question(R.string.question_oceans, true),
             new Question(R.string.question_mideast, false),
@@ -31,7 +36,10 @@ public class QuizActivity extends AppCompatActivity {
 
     };
 
-    private int mCurrentIndex = 0;
+    private int mCurrentIndex;
+    private int mCorrectAnswers;
+    private int scorePercentage;
+
 
 
     @Override
@@ -40,6 +48,20 @@ public class QuizActivity extends AppCompatActivity {
         Log.d(TAG, "onCreate(Bundle) called");
         setContentView(R.layout.activity_quiz);
 
+        // Map current question to answer result.
+        questionMap.put(0, false);
+        questionMap.put(1, false);
+        questionMap.put(2, false);
+        questionMap.put(3, false);
+        questionMap.put(4, false);
+        questionMap.put(5, false);
+
+
+        if (savedInstanceState != null) {
+            mCurrentIndex = savedInstanceState.getInt(KEY_INDEX, 0);
+        }
+
+        //TODO Ask about redundant casting
         // Set up listeners for question and buttons
         mQuestionTextView = (TextView) findViewById(R.id.question_text_view);
         mQuestionTextView.setOnClickListener(new View.OnClickListener() {
@@ -55,6 +77,12 @@ public class QuizActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 checkAnswer(true);
+                setQuestionAnswered(mCurrentIndex);
+                disableAnswerButtons();
+                if(hasAllQuestionsBeenAnswered()) {
+                    displayResults();
+                }
+
             }
         });
 
@@ -63,6 +91,11 @@ public class QuizActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 checkAnswer(false);
+                setQuestionAnswered(mCurrentIndex);
+                disableAnswerButtons();
+                if(hasAllQuestionsBeenAnswered()) {
+                    displayResults();
+                }
             }
         });
 
@@ -71,21 +104,34 @@ public class QuizActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 //TODO Stop looping through questions.
-                Log.d(TAG, "Current Index:" + String.valueOf(mCurrentIndex));
                 mCurrentIndex = (mCurrentIndex + 1) % mQuestionBank.length;
+                enabledAnswerButtons();
+                Log.d(TAG, "Current Index:" + String.valueOf(mCurrentIndex));
                 updateQuestion();
+
+                Log.d(TAG, String.valueOf(questionMap));
+                if(hasQuestionBeenAnswered(mCurrentIndex)) {
+                    disableAnswerButtons();
+                }
+
+                if(hasAllQuestionsBeenAnswered()) {
+                    displayResults();
+                }
             }
+
         });
 
         mPreviouButton = (ImageButton) findViewById(R.id.previous_button);
         mPreviouButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                if(mCurrentIndex > 0) {
+                if (mCurrentIndex > 0) {
                     mCurrentIndex--;
                 }
-                Log.d(TAG, "Current Index:" + String.valueOf(mCurrentIndex));
                 updateQuestion();
+                if(hasQuestionBeenAnswered(mCurrentIndex)) {
+                    disableAnswerButtons();
+                }
             }
         });
 
@@ -109,6 +155,13 @@ public class QuizActivity extends AppCompatActivity {
     public void onPause() {
         super.onPause();
         Log.d(TAG, "onPause() called");
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle saveInstanceState) {
+        super.onSaveInstanceState(saveInstanceState);
+        Log.i(TAG, "onSaveInstanceState");
+        saveInstanceState.putInt(KEY_INDEX, mCurrentIndex);
     }
 
     @Override
@@ -136,6 +189,8 @@ public class QuizActivity extends AppCompatActivity {
 
         if (userPressedTrue == answerIsTrue) {
             messageResId = R.string.correct_toast;
+            mCorrectAnswers++;
+            Log.d(TAG, String.valueOf("Correct Answers: " + mCorrectAnswers));
 
         } else {
             messageResId = R.string.incorrect_toast;
@@ -144,4 +199,40 @@ public class QuizActivity extends AppCompatActivity {
         //TODO reposition toast to top of screen.
         Toast.makeText(this, messageResId, Toast.LENGTH_SHORT).show();
     }
+
+    private void setQuestionAnswered(int currentIndex) {
+        questionMap.put(currentIndex, true);
+    }
+
+    private boolean hasQuestionBeenAnswered(int currentIndex) {
+        return questionMap.get(currentIndex);
+    }
+
+    private void disableAnswerButtons() {
+        mTrueButton.setEnabled(false);
+        mFalseButton.setEnabled(false);
+    }
+
+    private void enabledAnswerButtons() {
+        mTrueButton.setEnabled(true);
+        mFalseButton.setEnabled(true);
+    }
+
+    private boolean hasAllQuestionsBeenAnswered() {
+        if(questionMap.containsValue(false)){
+            return false;
+        }
+        return true;
+    }
+
+    private void displayResults() {
+
+        scorePercentage = (int) ((mCorrectAnswers * 100.0f) /  mQuestionBank.length);
+
+        Log.d(TAG, String.valueOf("Score Percentage: " + scorePercentage));
+        Toast.makeText(this,
+                String.valueOf(scorePercentage) + "% Correct!", Toast.LENGTH_LONG).show();
+
+    }
+
 }
