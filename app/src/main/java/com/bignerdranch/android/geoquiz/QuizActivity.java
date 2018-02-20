@@ -25,6 +25,8 @@ public class QuizActivity extends AppCompatActivity {
 
     private TextView mQuestionTextView;
 
+    // Testing terminal
+
     // Declare and Initialize an array of question objects
     private Question[] mQuestionBank = new Question[]{
             new Question(R.string.question_australia, true),
