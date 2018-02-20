@@ -62,8 +62,8 @@ public class QuizActivity extends AppCompatActivity {
         }
 
         //TODO Ask about redundant casting
-        // Set up listeners for question and buttons
-        mQuestionTextView = (TextView) findViewById(R.id.question_text_view);
+
+       // mQuestionTextView = (TextView) findViewById(R.id.question_text_view);
         mQuestionTextView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
