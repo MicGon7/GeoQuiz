@@ -1,5 +1,6 @@
 package com.bignerdranch.android.geoquiz;
 
+import android.content.Intent;
 import android.os.Bundle;
 import android.support.v7.app.AppCompatActivity;
 import android.util.Log;
@@ -21,11 +22,11 @@ public class QuizActivity extends AppCompatActivity {
     private Button mFalseButton;
     private ImageButton mNextButton;
     private ImageButton mPreviouButton;
+    private Button mCheatButton;
     private HashMap<Integer, Boolean> questionMap = new HashMap<Integer, Boolean>();
 
     private TextView mQuestionTextView;
 
-    // Testing terminal
 
     // Declare and Initialize an array of question objects
     private Question[] mQuestionBank = new Question[]{
@@ -65,7 +66,7 @@ public class QuizActivity extends AppCompatActivity {
 
         //TODO Ask about redundant casting
 
-       // mQuestionTextView = (TextView) findViewById(R.id.question_text_view);
+        mQuestionTextView = (TextView) findViewById(R.id.question_text_view);
         mQuestionTextView.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -75,6 +76,7 @@ public class QuizActivity extends AppCompatActivity {
         });
 
         mTrueButton = (Button) findViewById(R.id.true_button);
+
         mTrueButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
@@ -84,7 +86,6 @@ public class QuizActivity extends AppCompatActivity {
                 if(hasAllQuestionsBeenAnswered()) {
                     displayResults();
                 }
-
             }
         });
 
@@ -105,7 +106,6 @@ public class QuizActivity extends AppCompatActivity {
         mNextButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                //TODO Stop looping through questions.
                 mCurrentIndex = (mCurrentIndex + 1) % mQuestionBank.length;
                 enabledAnswerButtons();
                 Log.d(TAG, "Current Index:" + String.valueOf(mCurrentIndex));
@@ -130,6 +130,7 @@ public class QuizActivity extends AppCompatActivity {
                 if (mCurrentIndex > 0) {
                     mCurrentIndex--;
                 }
+                enabledAnswerButtons();
                 updateQuestion();
                 if(hasQuestionBeenAnswered(mCurrentIndex)) {
                     disableAnswerButtons();
@@ -137,7 +138,16 @@ public class QuizActivity extends AppCompatActivity {
             }
         });
 
-        // Display default question.
+        mCheatButton = (Button) findViewById(R.id.cheat_button);
+        mCheatButton.setOnClickListener(new View.OnClickListener() {
+            @Override
+            public void onClick(View v) {
+                Intent intent = new Intent(QuizActivity.this, CheatActivity.class);
+                startActivity(intent);
+            }
+        });
+
+
         updateQuestion();
     }
 
@@ -179,7 +189,6 @@ public class QuizActivity extends AppCompatActivity {
     }
 
     private void updateQuestion() {
-
         int question = mQuestionBank[mCurrentIndex].getTextResId();
         mQuestionTextView.setText(question);
     }
