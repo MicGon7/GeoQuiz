@@ -9,6 +9,7 @@
         android:id="@+id/question_text_view"
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
+        android:gravity="center"
         android:paddingBottom="24dp"
         android:text="@string/question_australia" />
 
@@ -36,6 +37,13 @@
         android:layout_width="wrap_content"
         android:layout_height="wrap_content"
         android:text="@string/cheat_button" />
+    <TextView
+        android:id="@+id/cheat_count_text_view"
+        android:layout_width="wrap_content"
+        android:layout_height="wrap_content"
+        android:paddingBottom="12dp"
+        android:text="Cheats remaining: 3" />
+
 
     <LinearLayout
         android:layout_width="wrap_content"

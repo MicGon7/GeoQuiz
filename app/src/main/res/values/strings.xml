@@ -16,5 +16,7 @@
     <string name="show_answer_button">Show Answer</string>
     <string name="cheat_button">Cheat!</string>
     <string name="judgement_toast">Cheating is wrong.</string>
+    <string name="build_version">Build Version.</string>
+    <string name="cheat_count_text_view">Counter.</string>
 
 </resources>
