@@ -18,9 +18,9 @@ public class QuizActivity extends AppCompatActivity {
     private static final String KEY_INDEX = "index";
     private static final String KEY_CHEATED = "cheated";
     private static final String KEY_CHEAT_COUNT = "cheat count";
+    private static final String KEY_QUESTION_MAP = "question map";
+    private static final String KEY_CHEAT_MAP = "cheat map";
     private static final int REQUEST_CODE_CHEAT = 0;
-
-    // TEST COMMIT FROM PC
 
     private Button mTrueButton;
     private Button mFalseButton;
@@ -31,8 +31,10 @@ public class QuizActivity extends AppCompatActivity {
     private TextView mCheatCountTextView;
 
     private HashMap<Integer, Boolean> questionMap = new HashMap<Integer, Boolean>();
+    private HashMap<Integer, Boolean> cheatMap = new HashMap<Integer, Boolean>();
     private int mCurrentIndex;
     private int mCorrectAnswers;
+    private boolean mQuestionAnswered;
     private int mScorePercentage;
     private boolean mIsCheater;
     private int mCheatCounter = 3;
@@ -50,22 +52,15 @@ public class QuizActivity extends AppCompatActivity {
 
     };
 
-
-
-
     @Override
     protected void onCreate(Bundle savedInstanceState) {
         super.onCreate(savedInstanceState);
         Log.d(TAG, "onCreate(Bundle) called");
         setContentView(R.layout.activity_quiz);
 
-        // Map current question to answer result.
-        questionMap.put(0, false);
-        questionMap.put(1, false);
-        questionMap.put(2, false);
-        questionMap.put(3, false);
-        questionMap.put(4, false);
-        questionMap.put(5, false);
+        questionMap = populateBooleanMap(questionMap);
+        cheatMap = populateBooleanMap(cheatMap);
+
 
         // Initialize widgets.
         mQuestionTextView = findViewById(R.id.question_text_view);
@@ -74,7 +69,7 @@ public class QuizActivity extends AppCompatActivity {
         mNextButton =  findViewById(R.id.next_button);
         mPreviouButton = findViewById(R.id.previous_button);
         mCheatButton = findViewById(R.id.cheat_button);
-        mCheatCountTextView = (TextView) findViewById(R.id.cheat_count_text_view);
+        mCheatCountTextView = findViewById(R.id.cheat_count_text_view);
 
         mCheatCountTextView.setText(String.valueOf("Cheats Remaining: " + mCheatCounter));
 
@@ -90,31 +85,14 @@ public class QuizActivity extends AppCompatActivity {
         mTrueButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                checkAnswer(true);
-                setQuestionAnswered(mCurrentIndex);
-                disableAnswerButtons();
-
-                mCheatButton.setEnabled(false);
-
-
-                if (hasAllQuestionsBeenAnswered()) {
-                    displayResults();
-                }
+                handleAnswerSelection(true);
             }
         });
 
         mFalseButton.setOnClickListener(new View.OnClickListener() {
             @Override
             public void onClick(View view) {
-                checkAnswer(false);
-                setQuestionAnswered(mCurrentIndex);
-                disableAnswerButtons();
-                mCheatButton.setEnabled(false);
-
-                if (hasAllQuestionsBeenAnswered()) {
-                    displayResults();
-                }
-
+                handleAnswerSelection(false);
             }
         });
 
@@ -122,28 +100,8 @@ public class QuizActivity extends AppCompatActivity {
             @Override
             public void onClick(View view) {
                 mCurrentIndex = (mCurrentIndex + 1) % mQuestionBank.length;
-
-                if(mCheatCounter == 0){
-                    mCheatButton.setEnabled(false);
-                } else {
-                    mCheatButton.setEnabled(true);
-                }
-
-                mIsCheater = false;
-                enabledAnswerButtons();
-                updateQuestion();
-
-                Log.d(TAG, String.valueOf(questionMap));
-                if (hasQuestionBeenAnswered(mCurrentIndex)) {
-                    disableAnswerButtons();
-                    mCheatButton.setEnabled(false);
-                }
-
-                if (hasAllQuestionsBeenAnswered()) {
-                    displayResults();
-                }
+                handleQuestionTransition();
             }
-
         });
 
         mPreviouButton.setOnClickListener(new View.OnClickListener() {
@@ -153,21 +111,9 @@ public class QuizActivity extends AppCompatActivity {
                 if (mCurrentIndex > 0) {
                     mCurrentIndex--;
                 }
-                if(mCheatCounter == 0){
-                    mCheatButton.setEnabled(false);
-                } else {
-                    mCheatButton.setEnabled(true);
-                }
-
-                mIsCheater = false;
-                enabledAnswerButtons();
-                updateQuestion();
-                if (hasQuestionBeenAnswered(mCurrentIndex)) {
-                    disableAnswerButtons();
-                }
+                handleQuestionTransition();
             }
         });
-
 
 
         mCheatButton.setOnClickListener(new View.OnClickListener() {
@@ -177,6 +123,7 @@ public class QuizActivity extends AppCompatActivity {
                 boolean answerIsTrue = mQuestionBank[mCurrentIndex].isAnswerTrue();
                 Intent intent = CheatActivity.newIntent(QuizActivity.this, answerIsTrue);
                 startActivityForResult(intent, REQUEST_CODE_CHEAT);
+                setQuestionCheated();
 
             }
         });
@@ -184,42 +131,50 @@ public class QuizActivity extends AppCompatActivity {
         if (savedInstanceState != null) {
             mCurrentIndex = savedInstanceState.getInt(KEY_INDEX, 0);
             mCheatCounter = savedInstanceState.getInt(KEY_CHEAT_COUNT, 0);
+            questionMap = ((HashMap<Integer, Boolean>)savedInstanceState.getSerializable(KEY_QUESTION_MAP));
+            cheatMap = ((HashMap<Integer, Boolean>)savedInstanceState.getSerializable(KEY_CHEAT_MAP));
+
         }
-      
+
+        handleQuestionTransition();
+
+    }
+
+    private void handleAnswerSelection(Boolean answer) {
+        checkAnswer(answer);
+        setQuestionAnswered();
+        disableAnswerButtons();
+        mCheatButton.setEnabled(false);
+
+        if (hasAllQuestionsBeenAnswered()) {
+            displayResults();
+        }
+    }
+
+    private void handleQuestionTransition() {
+
+        enabledAnswerButtons();
+        Log.d(TAG, "Current Index: " + mCurrentIndex);
+        Log.d(TAG, "Question map: " + questionMap);
+        Log.d(TAG, "Cheat map: " + cheatMap);
+        mQuestionAnswered = questionMap.get(mCurrentIndex);
+        mIsCheater = cheatMap.get(mCurrentIndex);
+
+        if(mCheatCounter == 0 || mIsCheater){
+            mCheatButton.setEnabled(false);
+        } else {
+            mCheatButton.setEnabled(true);
+        }
+
+        if (mQuestionAnswered) {
+            disableAnswerButtons();
+            mCheatButton.setEnabled(false);
+        }
+
+        if (hasAllQuestionsBeenAnswered()) {
+            displayResults();
+        }
         updateQuestion();
-    }
-
-    @Override
-    public void onSaveInstanceState(Bundle saveInstanceState) {
-        super.onSaveInstanceState(saveInstanceState);
-        Log.i(TAG, "onSaveInstanceState");
-        saveInstanceState.putInt(KEY_INDEX, mCurrentIndex);
-        saveInstanceState.putBoolean(KEY_CHEATED, mIsCheater);
-        saveInstanceState.putInt(KEY_CHEAT_COUNT, mCheatCounter);
-    }
-
-    @Override
-    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
-        if (resultCode != Activity.RESULT_OK) {
-            return;
-        }
-        if (requestCode == REQUEST_CODE_CHEAT) {
-            if (data == null) {
-                return;
-            }
-
-            mIsCheater = CheatActivity.wasAnswerShown(data);
-
-            mCheatCounter--;
-
-            if(mCheatCounter == 0){
-                mCheatButton.setEnabled(false);
-            }
-            mCheatCountTextView.setText(String.valueOf("Cheats Remaining: " + mCheatCounter));
-
-
-
-        }
     }
 
     private void updateQuestion() {
@@ -242,19 +197,19 @@ public class QuizActivity extends AppCompatActivity {
 
             } else {
                 messageResId = R.string.incorrect_toast;
+                mIsCheater = false;
             }
 
         }
-
         Toast.makeText(this, messageResId, Toast.LENGTH_SHORT).show();
     }
 
-    private void setQuestionAnswered(int currentIndex) {
-        questionMap.put(currentIndex, true);
+    private void setQuestionAnswered() {
+        questionMap.put(mCurrentIndex, true);
     }
 
-    private boolean hasQuestionBeenAnswered(int currentIndex) {
-        return questionMap.get(currentIndex);
+    private void setQuestionCheated() {
+        cheatMap.put(mCurrentIndex, true);
     }
 
     private boolean hasAllQuestionsBeenAnswered() {
@@ -274,7 +229,6 @@ public class QuizActivity extends AppCompatActivity {
         mFalseButton.setEnabled(true);
     }
 
-
     private void displayResults() {
 
         mScorePercentage = (int) ((mCorrectAnswers * 100.0f) / mQuestionBank.length);
@@ -283,6 +237,44 @@ public class QuizActivity extends AppCompatActivity {
         Toast.makeText(this,
                 String.valueOf(mScorePercentage) + "% Correct!", Toast.LENGTH_LONG).show();
 
+    }
+
+    private HashMap populateBooleanMap(HashMap<Integer, Boolean> m) {
+        for(int i = 0; i < mQuestionBank.length; i++){
+            m.put(i, false);
+        }
+        return m;
+    }
+
+    @Override
+    public void onSaveInstanceState(Bundle saveInstanceState) {
+        super.onSaveInstanceState(saveInstanceState);
+        Log.i(TAG, "onSaveInstanceState");
+        saveInstanceState.putInt(KEY_INDEX, mCurrentIndex);
+        saveInstanceState.putBoolean(KEY_CHEATED, mIsCheater);
+        saveInstanceState.putInt(KEY_CHEAT_COUNT, mCheatCounter);
+        saveInstanceState.putSerializable(KEY_QUESTION_MAP, questionMap);
+        saveInstanceState.putSerializable(KEY_CHEAT_MAP, cheatMap);
+    }
+
+    @Override
+    protected void onActivityResult(int requestCode, int resultCode, Intent data) {
+        if (resultCode != Activity.RESULT_OK) {
+            return;
+        }
+        if (requestCode == REQUEST_CODE_CHEAT) {
+            if (data == null) {
+                return;
+            }
+            mIsCheater = CheatActivity.wasAnswerShown(data);
+
+            mCheatCounter--;
+
+            if(mCheatCounter == 0){
+                mCheatButton.setEnabled(false);
+            }
+            mCheatCountTextView.setText(String.valueOf("Cheats Remaining: " + mCheatCounter));
+        }
     }
 
 }
