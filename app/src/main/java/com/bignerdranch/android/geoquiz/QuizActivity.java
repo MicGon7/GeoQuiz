@@ -20,6 +20,7 @@ public class QuizActivity extends AppCompatActivity {
     private static final String KEY_CHEAT_COUNT = "cheat count";
     private static final int REQUEST_CODE_CHEAT = 0;
 
+    // TEST COMMIT FROM PC
 
     private Button mTrueButton;
     private Button mFalseButton;
